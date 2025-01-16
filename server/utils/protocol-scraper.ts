@@ -19,18 +19,18 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
     const sections: ProtocolSection[] = [];
 
     // Scrape main protocol sections
-    $('section').each((_, element) => {
+    $('.section-container').each((_, element) => {
       const $section = $(element);
       const id = $section.attr('id') || '';
-      const title = $section.find('h2').first().text().trim();
-      const content = $section.text().trim();
-      
+      const title = $section.find('h2, h3').first().text().trim();
+      const content = $section.find('p').first().text().trim();
+
       if (id && title) {
         sections.push({
           id,
           title,
           content,
-          categories: categorizeSectionContent(content),
+          categories: categorizeSectionContent(content, title),
           url: `${PROTOCOL_URL}#${id}`
         });
       }
@@ -43,17 +43,29 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
   }
 }
 
-function categorizeSectionContent(content: string): string[] {
-  const categories = [];
-  
+function categorizeSectionContent(content: string, title: string): string[] {
+  const categories = new Set<string>();
+  const text = `${title} ${content}`.toLowerCase();
+
   // Map content to categories based on keywords
-  if (content.toLowerCase().includes('supplement')) categories.push('supplements');
-  if (content.toLowerCase().includes('exercise') || content.toLowerCase().includes('workout')) categories.push('exercise');
-  if (content.toLowerCase().includes('diet') || content.toLowerCase().includes('nutrition')) categories.push('diet');
-  if (content.toLowerCase().includes('sleep')) categories.push('sleep');
-  if (content.toLowerCase().includes('test') || content.toLowerCase().includes('measure')) categories.push('testing');
-  
-  return categories;
+  const categoryKeywords = {
+    supplements: ['supplement', 'vitamin', 'mineral', 'omega', 'nutrient'],
+    exercise: ['exercise', 'workout', 'fitness', 'training', 'cardio', 'strength'],
+    diet: ['diet', 'nutrition', 'food', 'meal', 'eating'],
+    sleep: ['sleep', 'circadian', 'rest', 'bed'],
+    testing: ['test', 'measure', 'track', 'monitor', 'biomarker'],
+    longevity: ['longevity', 'lifespan', 'aging', 'age'],
+    brain: ['brain', 'cognitive', 'mental', 'focus', 'memory'],
+    hormones: ['hormone', 'testosterone', 'thyroid', 'insulin']
+  };
+
+  Object.entries(categoryKeywords).forEach(([category, keywords]) => {
+    if (keywords.some(keyword => text.includes(keyword))) {
+      categories.add(category);
+    }
+  });
+
+  return Array.from(categories);
 }
 
 export function findRelevantSections(
@@ -64,28 +76,67 @@ export function findRelevantSections(
   }
 ): Map<string, string> {
   const matches = new Map<string, string>();
-  
+
   // Map user preferences to relevant protocol sections
   const categoryMapping = {
     'biological-age': ['testing', 'supplements'],
-    'brain': ['supplements', 'diet'],
+    'brain': ['brain', 'supplements'],
     'sleep': ['sleep'],
     'fitness': ['exercise'],
-    'longevity': ['testing', 'supplements', 'diet'],
-    'hormones': ['testing', 'supplements']
+    'longevity': ['longevity', 'supplements', 'diet'],
+    'hormones': ['hormones', 'testing']
   };
 
   const equipmentMapping = {
-    'red-light': 'light',
-    'cgm': 'glucose',
-    'oura': 'sleep',
-    'hyperbaric': 'oxygen',
-    'infrared-sauna': 'sauna',
-    'cold-plunge': 'cold',
-    'peptide-injections': 'peptides',
-    'blood-testing': 'testing',
-    'dexa': 'testing'
+    'red-light': ['light-therapy'],
+    'cgm': ['glucose', 'testing'],
+    'oura': ['sleep', 'tracking'],
+    'hyperbaric': ['oxygen-therapy'],
+    'infrared-sauna': ['sauna', 'heat-therapy'],
+    'cold-plunge': ['cold-therapy'],
+    'peptide-injections': ['peptides'],
+    'blood-testing': ['testing', 'biomarkers'],
+    'dexa': ['body-composition', 'testing']
   };
+
+  const currentHealthMapping = {
+    'supplements': ['supplements'],
+    'tracking-sleep': ['sleep'],
+    'tracking-glucose': ['glucose', 'testing'],
+    'regular-exercise': ['exercise'],
+    'strict-diet': ['diet'],
+    'blood-tests': ['testing']
+  };
+
+  // Process improvement areas
+  userPreferences.improvementAreas.forEach(area => {
+    const categories = categoryMapping[area as keyof typeof categoryMapping] || [];
+    categories.forEach(category => {
+      if (!matches.has(category)) {
+        matches.set(category, `${PROTOCOL_URL}#${category}`);
+      }
+    });
+  });
+
+  // Process equipment
+  userPreferences.equipment.forEach(item => {
+    const categories = equipmentMapping[item as keyof typeof equipmentMapping] || [];
+    categories.forEach(category => {
+      if (!matches.has(category)) {
+        matches.set(category, `${PROTOCOL_URL}#${category}`);
+      }
+    });
+  });
+
+  // Process current health practices
+  userPreferences.currentHealth.forEach(practice => {
+    const categories = currentHealthMapping[practice as keyof typeof currentHealthMapping] || [];
+    categories.forEach(category => {
+      if (!matches.has(category)) {
+        matches.set(category, `${PROTOCOL_URL}#${category}`);
+      }
+    });
+  });
 
   return matches;
 }
