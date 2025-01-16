@@ -7,18 +7,22 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/routines", async (req, res) => {
     try {
       const userData = req.body;
-      
-      // Create user
+
+      // Create user with all questionnaire data
       const [user] = await db.insert(users).values({
         name: userData.name,
         age: userData.age,
         gender: userData.gender,
+        improvementAreas: userData.improvementAreas,
+        budget: userData.budget,
+        equipment: userData.equipment,
+        currentHealth: userData.currentHealth,
       }).returning();
 
       // Generate personalized routine based on user data
       const routine = generateRoutine(userData);
-      
-      // Save routine
+
+      // Save routine with protocol links
       const [savedRoutine] = await db.insert(routines).values({
         userId: user.id,
         ...routine,
@@ -26,6 +30,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(savedRoutine);
     } catch (error) {
+      console.error('Error creating routine:', error);
       res.status(500).json({ error: "Failed to create routine" });
     }
   });
@@ -51,32 +56,62 @@ export function registerRoutes(app: Express): Server {
 }
 
 function generateRoutine(userData: any) {
-  // This is a simplified version of the routine generation
+  const protocolLinks = {
+    supplements: "https://protocol.bryanjohnson.com/#supplements",
+    exercise: "https://protocol.bryanjohnson.com/#exercise",
+    diet: "https://protocol.bryanjohnson.com/#perfect-diet",
+    sleep: "https://protocol.bryanjohnson.com/#sleep",
+    testing: "https://protocol.bryanjohnson.com/#measurements",
+  };
+
   return {
     supplements: [
-      { name: "Vitamin D", dosage: "2000 IU", timing: "Morning" },
-      { name: "Omega-3", dosage: "1000mg", timing: "With meal" },
+      { 
+        name: "Vitamin D3", 
+        dosage: "2,000 IU", 
+        timing: "Morning",
+        reference: protocolLinks.supplements 
+      },
+      { 
+        name: "Omega-3", 
+        dosage: "2g EPA, 1g DHA", 
+        timing: "With meals",
+        reference: protocolLinks.supplements 
+      },
+      // Add more supplements based on user profile
     ],
     diet: {
-      meals: ["Green smoothie", "Vegetable-rich lunch", "Light dinner"],
-      restrictions: ["No processed foods", "Limited sugar"],
-      schedule: ["Breakfast 8am", "Lunch 1pm", "Dinner 6pm"],
+      meals: [
+        "Green Giant (morning smoothie)",
+        "Nutty Pudding breakfast",
+        "Super Veggie lunch",
+      ],
+      restrictions: [
+        "No food 3 hours before bedtime",
+        "Vegan except for specific supplements"
+      ],
+      schedule: ["Breakfast 6am", "Lunch 11am", "Dinner 4pm"],
+      reference: protocolLinks.diet
     },
     exercise: {
-      type: "Mixed cardio and strength",
-      frequency: "5 times per week",
-      duration: "45 minutes",
+      type: "Zone 2 cardio + strength training",
+      frequency: "Daily",
+      duration: "1 hour",
+      reference: protocolLinks.exercise
     },
     sleepSchedule: {
-      bedtime: "22:00",
-      wakeTime: "06:00",
+      bedtime: "20:30",
+      wakeTime: "05:30",
       sleepGoal: 8,
+      reference: protocolLinks.sleep
     },
     metrics: {
       trackWeight: true,
       trackSleep: true,
       trackSteps: true,
       trackSupplements: true,
+      reference: protocolLinks.testing
     },
+    protocolLinks
   };
 }
