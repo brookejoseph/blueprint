@@ -2,11 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { routines, users, metrics } from "@db/schema";
+import { eq } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
   app.post("/api/routines", async (req, res) => {
     try {
       const userData = req.body;
+      console.log('Creating user with data:', userData);
 
       // Create user with all questionnaire data
       const [user] = await db.insert(users).values({
@@ -19,15 +21,24 @@ export function registerRoutes(app: Express): Server {
         currentHealth: userData.currentHealth,
       }).returning();
 
+      console.log('User created:', user);
+
       // Generate personalized routine based on user data
       const routine = generateRoutine(userData);
+      console.log('Generated routine:', routine);
 
       // Save routine with protocol links
       const [savedRoutine] = await db.insert(routines).values({
         userId: user.id,
-        ...routine,
+        supplements: routine.supplements,
+        diet: routine.diet,
+        exercise: routine.exercise,
+        sleepSchedule: routine.sleepSchedule,
+        metrics: routine.metrics,
+        protocolLinks: routine.protocolLinks,
       }).returning();
 
+      console.log('Saved routine:', savedRoutine);
       res.json(savedRoutine);
     } catch (error) {
       console.error('Error creating routine:', error);
@@ -37,16 +48,22 @@ export function registerRoutes(app: Express): Server {
 
   app.get("/api/routines/:id", async (req, res) => {
     try {
+      const routineId = parseInt(req.params.id);
+      console.log('Fetching routine with ID:', routineId);
+
       const routine = await db.query.routines.findFirst({
-        where: (routines, { eq }) => eq(routines.id, parseInt(req.params.id)),
+        where: eq(routines.id, routineId),
       });
 
       if (!routine) {
+        console.log('Routine not found for ID:', routineId);
         return res.status(404).json({ error: "Routine not found" });
       }
 
+      console.log('Found routine:', routine);
       res.json(routine);
     } catch (error) {
+      console.error('Error fetching routine:', error);
       res.status(500).json({ error: "Failed to fetch routine" });
     }
   });
@@ -78,7 +95,6 @@ function generateRoutine(userData: any) {
         timing: "With meals",
         reference: protocolLinks.supplements 
       },
-      // Add more supplements based on user profile
     ],
     diet: {
       meals: [
