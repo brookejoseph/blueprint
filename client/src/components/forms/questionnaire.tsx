@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -36,19 +37,8 @@ export default function Questionnaire() {
     },
   });
 
-  const createRoutine = useMutation({
-    mutationFn: async (data: UserFormData) => {
-      const response = await fetch("/api/routines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setLocation(`/routine/${data.id}`);
-    },
-  });
+  const createUser = useMutation(api.mutations.createUser);
+  const createRoutine = useMutation(api.mutations.createRoutine);
 
   const nextStep = () => {
     setStep(step + 1);
@@ -58,8 +48,23 @@ export default function Questionnaire() {
     setStep(step - 1);
   };
 
-  const onSubmit = (data: UserFormData) => {
-    createRoutine.mutate(data);
+  const onSubmit = async (data: UserFormData) => {
+    try {
+      const userId = await createUser({
+        name: data.name,
+        age: data.age,
+        gender: data.gender,
+        improvementAreas: data.improvementAreas,
+        budget: data.budget,
+        equipment: data.equipment,
+        currentHealth: data.currentHealth,
+      });
+
+      const routineId = await createRoutine({ userId });
+      setLocation(`/routine/${routineId}`);
+    } catch (error) {
+      console.error("Error creating routine:", error);
+    }
   };
 
   return (
@@ -358,9 +363,7 @@ export default function Questionnaire() {
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <div
               key={i}
-              className={`h-2 w-2 rounded-full ${
-                i === step ? "bg-blue-600" : "bg-gray-200"
-              }`}
+              className={`h-2 w-2 rounded-full ${i === step ? "bg-blue-600" : "bg-gray-200"}`}
             />
           ))}
         </div>

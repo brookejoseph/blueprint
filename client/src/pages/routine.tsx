@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProtocolCard from "@/components/protocol/protocol-card";
@@ -9,9 +10,7 @@ import type { RoutineData, EmbeddedSection } from "@/lib/types";
 export default function Routine() {
   const { id } = useParams();
 
-  const { data: routine, isLoading } = useQuery<RoutineData>({
-    queryKey: [`/api/routines/${id}`],
-  });
+  const { data: routine, isLoading } = useQuery(api.queries.getRoutine, { routineId: id });
 
   if (isLoading) {
     return <div className="container mx-auto p-8">Loading...</div>;
