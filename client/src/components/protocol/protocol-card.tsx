@@ -11,15 +11,7 @@ interface ProtocolCardProps {
 
 export default function ProtocolCard({ title, data, embeddedSection }: ProtocolCardProps) {
   const handleProtocolLink = (url: string) => {
-    // Open in new tab and ensure text fragment highlighting works
-    const win = window.open(url, '_blank');
-    if (win) {
-      win.focus();
-      // Add a small delay to ensure the browser has time to process the text fragment
-      setTimeout(() => {
-        win.scrollTo(0, win.scrollY - 100); // Scroll up slightly to show context
-      }, 1000);
-    }
+    window.open(url, '_blank')?.focus();
   };
 
   const renderContent = () => {

@@ -7,7 +7,7 @@ interface ProtocolSection {
   content: string;
   categories: string[];
   url: string;
-  textFragment?: string; // Add text fragment for highlighting
+  textFragment?: string;
 }
 
 const PROTOCOL_URL = "https://protocol.bryanjohnson.com";
@@ -39,9 +39,13 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
       ) || paragraphs[0];
 
       if (id && title && content) {
-        // Create text fragment identifier for highlighting
-        const textFragment = keyParagraph ? 
-          `#:~:text=${encodeURIComponent(keyParagraph.slice(0, 150))}` : '';
+        // Create Chrome-compatible text fragment
+        let textFragment = '';
+        if (keyParagraph) {
+          // Take first 50 characters of the key paragraph for the text fragment
+          const fragmentText = keyParagraph.slice(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').trim();
+          textFragment = `:~:text=${encodeURIComponent(fragmentText)}`;
+        }
 
         sections.push({
           id,
