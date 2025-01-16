@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { type InferModel } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -49,7 +50,12 @@ export const metrics = pgTable("metrics", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export type User = typeof users.$inferSelect;
-export type ProtocolSection = typeof protocolSections.$inferSelect;
-export type Routine = typeof routines.$inferSelect;
-export type Metric = typeof metrics.$inferSelect;
+// Export types for type safety
+export type User = InferModel<typeof users>;
+export type ProtocolSection = InferModel<typeof protocolSections>;
+export type Routine = InferModel<typeof routines>;
+export type Metric = InferModel<typeof metrics>;
+
+// Export Zod schemas for validation
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);

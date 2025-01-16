@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IMPROVEMENT_AREAS, BUDGET_RANGES, AVAILABLE_EQUIPMENT, CURRENT_HEALTH } from "@/lib/types";
 import type { UserFormData } from "@/lib/types";
 import { Brain, Moon, Activity, Dumbbell, Infinity, Hourglass } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ICONS = {
   brain: Brain,
@@ -23,6 +24,7 @@ const ICONS = {
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const form = useForm<UserFormData>({
     defaultValues: {
@@ -42,11 +44,31 @@ export default function Questionnaire() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create routine");
+      }
       return response.json();
     },
     onSuccess: (data) => {
-      setLocation(`/routine/${data.id}`);
+      if (data && data.id) {
+        setLocation(`/routine/${data.id}`);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create routine: Invalid response data",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create routine",
+        variant: "destructive",
+      });
     },
   });
 
@@ -358,9 +380,7 @@ export default function Questionnaire() {
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
             <div
               key={i}
-              className={`h-2 w-2 rounded-full ${
-                i === step ? "bg-blue-600" : "bg-gray-200"
-              }`}
+              className={`h-2 w-2 rounded-full ${i === step ? "bg-blue-600" : "bg-gray-200"}`}
             />
           ))}
         </div>

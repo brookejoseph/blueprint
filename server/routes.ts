@@ -9,6 +9,18 @@ let cachedProtocolSections: any[] = [];
 
 async function initializeProtocolSections() {
   try {
+    // First check if the table exists, if not, skip the initialization
+    const { error: checkError } = await supabase
+      .from('protocol_sections')
+      .select('*')
+      .limit(1);
+
+    // If table doesn't exist, just return and let the application continue
+    if (checkError && checkError.code === '42P01') {
+      console.log('Protocol sections table does not exist yet, skipping initialization');
+      return;
+    }
+
     const { data: existingSections, error } = await supabase
       .from('protocol_sections')
       .select('*');
