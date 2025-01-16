@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 interface ProtocolCardProps {
   title: string;
@@ -9,25 +11,56 @@ export default function ProtocolCard({ title, data }: ProtocolCardProps) {
   const renderContent = () => {
     if (Array.isArray(data)) {
       return (
-        <ul className="space-y-2">
-          {data.map((item, index) => (
-            <li key={index} className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span>{typeof item === 'string' ? item : item.name}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-4">
+          <ul className="space-y-2">
+            {data.map((item, index) => (
+              <li key={index} className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                <span>{typeof item === 'string' ? item : item.name}</span>
+                {item.dosage && <span className="text-gray-600">({item.dosage})</span>}
+                {item.timing && <span className="text-gray-600">- {item.timing}</span>}
+              </li>
+            ))}
+          </ul>
+          {data[0]?.reference && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full flex items-center justify-center gap-2 text-blue-600"
+              onClick={() => window.open(data[0].reference, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4" />
+              View Full Protocol Details
+            </Button>
+          )}
+        </div>
       );
     }
 
     return (
-      <div className="space-y-2">
-        {Object.entries(data).map(([key, value]) => (
-          <div key={key} className="flex justify-between">
-            <span className="text-gray-600">{key}:</span>
-            <span className="font-medium">{String(value)}</span>
-          </div>
-        ))}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          {Object.entries(data).map(([key, value]) => {
+            if (key === 'reference') return null;
+            return (
+              <div key={key} className="flex justify-between">
+                <span className="text-gray-600">{key}:</span>
+                <span className="font-medium">{String(value)}</span>
+              </div>
+            );
+          })}
+        </div>
+        {data.reference && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-full flex items-center justify-center gap-2 text-blue-600"
+            onClick={() => window.open(data.reference, '_blank')}
+          >
+            <ExternalLink className="h-4 w-4" />
+            View Full Protocol Details
+          </Button>
+        )}
       </div>
     );
   };
