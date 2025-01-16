@@ -123,49 +123,85 @@ export function registerRoutes(app: Express): Server {
 }
 
 function generateRoutine(userData: any, relevantSections: Map<string, string>) {
-  // Find most relevant embedded sections from cached protocol data
-  const embeddedSections = cachedProtocolSections
-    .filter(section => {
-      const userCategories = [
-        ...userData.improvementAreas,
-        ...userData.currentHealth,
-        ...userData.equipment,
-      ];
+  // Find the most relevant embedded sections from cached protocol data
+  // Enhanced matching to find specific, relevant content for each component
+  const findRelevantContent = (category: string, specificTerms: string[]) => {
+    return cachedProtocolSections
+      .filter(section => {
+        // Look for exact category matches first
+        const categoryMatch = section.categories.includes(category);
 
-      // More sophisticated matching using categories and content relevance
-      return userCategories.some(category => 
-        section.categories.some((sectionCat: string) => 
-          sectionCat.toLowerCase().includes(category.toLowerCase())
-        ) ||
-        section.content.toLowerCase().includes(category.toLowerCase())
-      );
-    })
-    .sort((a, b) => {
-      // Sort by category match count for better relevance
-      const getCategoryMatchCount = (section: any) => {
-        return section.categories.filter((cat: string) => 
-          userData.improvementAreas.includes(cat) ||
-          userData.currentHealth.includes(cat) ||
-          userData.equipment.includes(cat)
-        ).length;
-      };
-      return getCategoryMatchCount(b) - getCategoryMatchCount(a);
-    })
-    .slice(0, 5) // Take top 5 most relevant sections
+        // Then check for specific term matches in the content
+        const contentMatch = specificTerms.some(term => 
+          section.content.toLowerCase().includes(term.toLowerCase())
+        );
+
+        return categoryMatch || contentMatch;
+      })
+      .sort((a, b) => {
+        // Score sections based on relevance
+        const getScore = (section: any) => {
+          let score = 0;
+          // Category match is worth more
+          if (section.categories.includes(category)) score += 5;
+          // Count matches of specific terms
+          specificTerms.forEach(term => {
+            const matches = (section.content.toLowerCase().match(new RegExp(term.toLowerCase(), 'g')) || []).length;
+            score += matches;
+          });
+          return score;
+        };
+        return getScore(b) - getScore(a);
+      })
+      [0]; // Take the most relevant section
+  };
+
+  // Find relevant sections for each protocol component
+  const supplementSection = findRelevantContent('supplements', [
+    'vitamin', 'mineral', 'omega', 'dosage', 'morning', 'evening'
+  ]);
+
+  const dietSection = findRelevantContent('diet', [
+    'meal', 'nutrition', 'eating window', 'vegetables', 'protein'
+  ]);
+
+  const exerciseSection = findRelevantContent('exercise', [
+    'workout', 'training', 'cardio', 'strength', 'mobility'
+  ]);
+
+  const sleepSection = findRelevantContent('sleep', [
+    'circadian', 'bedtime', 'wake', 'melatonin', 'deep sleep'
+  ]);
+
+  const metricsSection = findRelevantContent('testing', [
+    'biomarker', 'measurement', 'tracking', 'monitoring', 'data'
+  ]);
+
+  // Create links with text fragments for specific, relevant content
+  const protocolLinks = {
+    supplements: supplementSection?.url || `${PROTOCOL_URL}#supplements`,
+    exercise: exerciseSection?.url || `${PROTOCOL_URL}#exercise`,
+    diet: dietSection?.url || `${PROTOCOL_URL}#perfect-diet`,
+    sleep: sleepSection?.url || `${PROTOCOL_URL}#sleep`,
+    testing: metricsSection?.url || `${PROTOCOL_URL}#measurements`,
+  };
+
+  // Create embedded sections with the most relevant content
+  const embeddedSections = [
+    supplementSection,
+    dietSection,
+    exerciseSection,
+    sleepSection,
+    metricsSection
+  ]
+    .filter(Boolean)
     .map(section => ({
       title: section.title,
       content: section.content,
       url: section.url,
     }));
 
-  const protocolLinks = {
-    supplements: relevantSections.get('supplements') || `${PROTOCOL_URL}#supplements`,
-    exercise: relevantSections.get('exercise') || `${PROTOCOL_URL}#exercise`,
-    diet: relevantSections.get('diet') || `${PROTOCOL_URL}#perfect-diet`,
-    sleep: relevantSections.get('sleep') || `${PROTOCOL_URL}#sleep`,
-    testing: relevantSections.get('testing') || `${PROTOCOL_URL}#measurements`,
-  };
-
+  // Rest of the routine generation remains unchanged
   return {
     supplements: [
       { 

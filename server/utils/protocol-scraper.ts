@@ -39,12 +39,24 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
       ) || paragraphs[0];
 
       if (id && title && content) {
-        // Create Chrome-compatible text fragment
+        // Generate text fragment with context for better highlighting
         let textFragment = '';
         if (keyParagraph) {
-          // Take first 50 characters of the key paragraph for the text fragment
-          const fragmentText = keyParagraph.slice(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').trim();
-          textFragment = `:~:text=${encodeURIComponent(fragmentText)}`;
+          // Clean and prepare the text for the fragment
+          const cleanText = keyParagraph.replace(/[^\w\s-]/g, ' ').trim();
+          const words = cleanText.split(/\s+/);
+
+          // Take a meaningful chunk of text (around 10-15 words)
+          const targetText = words.slice(0, 12).join(' ');
+
+          // Find some context words before and after if available
+          const prefix = words.slice(Math.max(0, words.indexOf(words[0]) - 3), words.indexOf(words[0])).join(' ');
+          const suffix = words.slice(12, 15).join(' ');
+
+          // Construct the text fragment URL component
+          textFragment = prefix ? 
+            `:~:text=${encodeURIComponent(prefix)}-,${encodeURIComponent(targetText)},${encodeURIComponent(suffix)}` :
+            `:~:text=${encodeURIComponent(targetText)},${encodeURIComponent(suffix)}`;
         }
 
         sections.push({
@@ -58,7 +70,7 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
       }
     });
 
-    // Sort sections by relevance and content length
+    // Sort sections by content relevance and length
     return sections.sort((a, b) => b.content.length - a.content.length);
   } catch (error) {
     console.error('Error scraping protocol:', error);
