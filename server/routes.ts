@@ -69,7 +69,15 @@ export function registerRoutes(app: Express): Server {
         .select()
         .single();
 
-      if (userError) throw userError;
+      if (userError) {
+        console.error('Error creating user:', userError);
+        throw userError;
+      }
+
+      if (!user) {
+        throw new Error('User creation failed');
+      }
+
       console.log('User created:', user);
 
       // Find relevant protocol sections based on user preferences
@@ -99,9 +107,20 @@ export function registerRoutes(app: Express): Server {
         .select()
         .single();
 
-      if (routineError) throw routineError;
+      if (routineError) {
+        console.error('Error creating routine:', routineError);
+        throw routineError;
+      }
+
+      if (!savedRoutine) {
+        throw new Error('Routine creation failed');
+      }
+
       console.log('Saved routine:', savedRoutine);
-      res.json(savedRoutine);
+      res.json({ 
+        id: savedRoutine.id,
+        ...savedRoutine
+      });
     } catch (error) {
       console.error('Error creating routine:', error);
       res.status(500).json({ error: "Failed to create routine" });
@@ -113,19 +132,40 @@ export function registerRoutes(app: Express): Server {
       const routineId = parseInt(req.params.id);
       console.log('Fetching routine with ID:', routineId);
 
+      if (isNaN(routineId)) {
+        return res.status(400).json({ error: "Invalid routine ID" });
+      }
+
       const { data: routine, error } = await supabase
         .from('routines')
         .select('*')
         .eq('id', routineId)
         .single();
 
-      if (error || !routine) {
+      if (error) {
+        console.error('Error fetching routine:', error);
+        throw error;
+      }
+
+      if (!routine) {
         console.log('Routine not found for ID:', routineId);
         return res.status(404).json({ error: "Routine not found" });
       }
 
-      console.log('Found routine:', routine);
-      res.json(routine);
+      // Transform the response to match the frontend's expected format
+      const response = {
+        id: routine.id,
+        supplements: routine.supplements,
+        diet: routine.diet,
+        exercise: routine.exercise,
+        sleepSchedule: routine.sleep_schedule,
+        metrics: routine.metrics,
+        protocolLinks: routine.protocol_links,
+        embeddedSections: routine.embedded_sections,
+      };
+
+      console.log('Found routine:', response);
+      res.json(response);
     } catch (error) {
       console.error('Error fetching routine:', error);
       res.status(500).json({ error: "Failed to fetch routine" });
