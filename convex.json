@@ -1,0 +1,7 @@
+{
+  "project": "blueprint",
+  "team": "brooke",
+  "functions": {
+    "codegen": true
+  }
+}
