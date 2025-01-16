@@ -9,17 +9,20 @@ let cachedProtocolSections: any[] = [];
 
 async function initializeProtocolSections() {
   try {
-    // Check if we already have sections in the database
     const { data: existingSections, error } = await supabase
       .from('protocol_sections')
       .select('*');
 
+    if (error) {
+      console.error('Error fetching protocol sections:', error);
+      return;
+    }
+
     if (!existingSections || existingSections.length === 0) {
-      // Scrape and store sections if none exist
       const sections = await scrapeProtocolSections();
 
       for (const section of sections) {
-        await supabase
+        const { error: insertError } = await supabase
           .from('protocol_sections')
           .insert({
             section_id: section.id,
@@ -28,6 +31,10 @@ async function initializeProtocolSections() {
             categories: section.categories,
             url: section.url,
           });
+
+        if (insertError) {
+          console.error('Error inserting protocol section:', insertError);
+        }
       }
 
       cachedProtocolSections = sections;
@@ -45,7 +52,6 @@ async function initializeProtocolSections() {
   }
 }
 
-// Initialize protocol sections when server starts
 initializeProtocolSections();
 
 export function registerRoutes(app: Express): Server {
@@ -54,7 +60,7 @@ export function registerRoutes(app: Express): Server {
       const userData = req.body;
       console.log('Creating user with data:', userData);
 
-      // Create user with all questionnaire data
+      // Insert user with proper column names
       const { data: user, error: userError } = await supabase
         .from('users')
         .insert({
@@ -91,7 +97,7 @@ export function registerRoutes(app: Express): Server {
       const routine = generateRoutine(userData, relevantSections);
       console.log('Generated routine:', routine);
 
-      // Save routine with protocol links and embedded sections
+      // Save routine with proper column names
       const { data: savedRoutine, error: routineError } = await supabase
         .from('routines')
         .insert({
@@ -117,13 +123,24 @@ export function registerRoutes(app: Express): Server {
       }
 
       console.log('Saved routine:', savedRoutine);
+
+      // Send back the routine ID and data in the expected format
       res.json({ 
         id: savedRoutine.id,
-        ...savedRoutine
+        supplements: savedRoutine.supplements,
+        diet: savedRoutine.diet,
+        exercise: savedRoutine.exercise,
+        sleepSchedule: savedRoutine.sleep_schedule,
+        metrics: savedRoutine.metrics,
+        protocolLinks: savedRoutine.protocol_links,
+        embeddedSections: savedRoutine.embedded_sections,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating routine:', error);
-      res.status(500).json({ error: "Failed to create routine" });
+      res.status(500).json({ 
+        error: "Failed to create routine",
+        details: error.message 
+      });
     }
   });
 
@@ -166,9 +183,12 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Found routine:', response);
       res.json(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching routine:', error);
-      res.status(500).json({ error: "Failed to fetch routine" });
+      res.status(500).json({ 
+        error: "Failed to fetch routine",
+        details: error.message 
+      });
     }
   });
 
