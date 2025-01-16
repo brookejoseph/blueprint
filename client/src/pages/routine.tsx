@@ -1,23 +1,22 @@
 import { useParams } from "wouter";
 import { useQuery } from "convex/react";
-import { api } from "convex/_generated/api";
+import { api, Id } from "../../../convex";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProtocolCard from "@/components/protocol/protocol-card";
 import MetricsDisplay from "@/components/metrics/metrics-display";
-import type { RoutineData, EmbeddedSection } from "@/lib/types";
+import type { EmbeddedSection } from "@/lib/types";
 
 export default function Routine() {
   const { id } = useParams();
 
-  const { data: routine, isLoading } = useQuery(api.queries.getRoutine, { routineId: id });
+  // Convert string id to Convex ID type
+  const routineId = id as Id<"routines">;
 
-  if (isLoading) {
-    return <div className="container mx-auto p-8">Loading...</div>;
-  }
+  const routine = useQuery(api.queries.getRoutine, { routineId });
 
   if (!routine) {
-    return <div className="container mx-auto p-8">Routine not found</div>;
+    return <div className="container mx-auto p-8">Loading...</div>;
   }
 
   // Find relevant embedded sections for each protocol component

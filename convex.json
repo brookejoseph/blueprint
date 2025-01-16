@@ -1,7 +1,0 @@
-{
-  "project": "blueprint-health",
-  "team": "default",
-  "prodUrl": "https://kind-elk-123.convex.cloud",
-  "functions": "convex/",
-  "authInfo": []
-}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation } from "wouter";
 import { useMutation } from "convex/react";
-import { api } from "convex/_generated/api";
+import { api } from "../../../../convex";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -40,16 +40,12 @@ export default function Questionnaire() {
   const createUser = useMutation(api.mutations.createUser);
   const createRoutine = useMutation(api.mutations.createRoutine);
 
-  const nextStep = () => {
-    setStep(step + 1);
-  };
-
-  const prevStep = () => {
-    setStep(step - 1);
-  };
+  const nextStep = () => setStep(step + 1);
+  const prevStep = () => setStep(step - 1);
 
   const onSubmit = async (data: UserFormData) => {
     try {
+      // First create the user
       const userId = await createUser({
         name: data.name,
         age: data.age,
@@ -60,7 +56,67 @@ export default function Questionnaire() {
         currentHealth: data.currentHealth,
       });
 
-      const routineId = await createRoutine({ userId });
+      // Then create the routine with default values
+      const routineId = await createRoutine({
+        userId,
+        supplements: [
+          { 
+            name: "Vitamin D3", 
+            dosage: "2,000 IU", 
+            timing: "Morning",
+            cost: 30,
+          },
+          { 
+            name: "Omega-3", 
+            dosage: "2g EPA, 1g DHA", 
+            timing: "With meals",
+            cost: 45,
+          },
+        ],
+        diet: {
+          meals: [
+            "Green Giant (morning smoothie)",
+            "Nutty Pudding breakfast",
+            "Super Veggie lunch",
+          ],
+          restrictions: [
+            "No food 3 hours before bedtime",
+            "Vegan except for specific supplements"
+          ],
+          schedule: ["Breakfast 6am", "Lunch 11am", "Dinner 4pm"],
+          estimatedCost: {
+            daily: 50,
+            monthly: 1500,
+          },
+        },
+        exercise: {
+          type: "Zone 2 cardio + strength training",
+          frequency: "Daily",
+          duration: "1 hour",
+          requiredEquipment: ["Weights", "Heart rate monitor"],
+        },
+        sleepSchedule: {
+          bedtime: "20:30",
+          wakeTime: "05:30",
+          sleepGoal: 8,
+          requiredItems: ["Blackout curtains", "Sleep mask"],
+        },
+        metrics: {
+          trackWeight: true,
+          trackSleep: true,
+          trackSteps: true,
+          trackSupplements: true,
+        },
+        protocolLinks: {
+          supplements: "https://protocol.bryanjohnson.com#supplements",
+          exercise: "https://protocol.bryanjohnson.com#exercise",
+          diet: "https://protocol.bryanjohnson.com#perfect-diet",
+          sleep: "https://protocol.bryanjohnson.com#sleep",
+          testing: "https://protocol.bryanjohnson.com#measurements",
+        },
+        embeddedSections: [],
+      });
+
       setLocation(`/routine/${routineId}`);
     } catch (error) {
       console.error("Error creating routine:", error);
