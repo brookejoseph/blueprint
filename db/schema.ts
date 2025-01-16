@@ -8,10 +8,6 @@ export const users = pgTable("users", {
   weight: integer("weight"),
   height: integer("height"),
   gender: text("gender").notNull(),
-  improvementAreas: json("improvement_areas").notNull(),
-  budget: text("budget").notNull(),
-  equipment: json("equipment").notNull(),
-  currentHealth: json("current_health").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -23,7 +19,6 @@ export const routines = pgTable("routines", {
   exercise: json("exercise").notNull(),
   sleepSchedule: json("sleep_schedule").notNull(),
   metrics: json("metrics").notNull(),
-  protocolLinks: json("protocol_links").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
