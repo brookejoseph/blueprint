@@ -7,6 +7,7 @@ export interface UserFormData {
   improvementAreas: string[];
   budget: string;
   equipment: string[];
+  currentHealth: string[];
 }
 
 export interface RoutineData {
@@ -56,25 +57,39 @@ export interface MetricsConfig {
 }
 
 export const IMPROVEMENT_AREAS = [
+  { id: "biological-age", label: "Biological Age Reduction", icon: "hourglass" },
+  { id: "brain", label: "Brain Health & Cognition", icon: "brain" },
   { id: "sleep", label: "Sleep Optimization", icon: "moon" },
-  { id: "skin", label: "Skin Health", icon: "sparkles" },
-  { id: "fitness", label: "Physical Fitness", icon: "dumbbell" },
-  { id: "mood", label: "Mental Clarity & Mood", icon: "brain" },
-  { id: "longevity", label: "Longevity", icon: "infinity" },
-  { id: "diet", label: "Nutrition & Diet", icon: "apple" }
+  { id: "fitness", label: "Physical Performance", icon: "dumbbell" },
+  { id: "longevity", label: "Longevity & Aging", icon: "infinity" },
+  { id: "hormones", label: "Hormone Optimization", icon: "activity" }
 ] as const;
 
 export const BUDGET_RANGES = [
-  { value: "essential", label: "Essential ($100-300/month)" },
-  { value: "moderate", label: "Moderate ($300-800/month)" },
-  { value: "comprehensive", label: "Comprehensive ($800+/month)" }
+  { value: "starter", label: "Starter ($500-1000/month)" },
+  { value: "intermediate", label: "Intermediate ($1000-2500/month)" },
+  { value: "advanced", label: "Advanced ($2500-5000/month)" },
+  { value: "comprehensive", label: "Comprehensive ($5000+/month)" }
 ] as const;
 
 export const AVAILABLE_EQUIPMENT = [
-  { id: "treadmill", label: "Treadmill" },
-  { id: "weights", label: "Free Weights" },
-  { id: "bike", label: "Exercise Bike" },
-  { id: "bands", label: "Resistance Bands" },
-  { id: "mat", label: "Yoga Mat" },
-  { id: "none", label: "No Equipment" }
+  { id: "red-light", label: "Red Light Therapy Device" },
+  { id: "cgm", label: "Continuous Glucose Monitor" },
+  { id: "oura", label: "Sleep Tracking Ring" },
+  { id: "hyperbaric", label: "Hyperbaric Chamber" },
+  { id: "infrared-sauna", label: "Infrared Sauna" },
+  { id: "cold-plunge", label: "Cold Plunge" },
+  { id: "peptide-injections", label: "Peptide Injections" },
+  { id: "blood-testing", label: "Regular Blood Testing" },
+  { id: "dexa", label: "DEXA Scan Access" },
+  { id: "none", label: "None of the above" }
+] as const;
+
+export const CURRENT_HEALTH = [
+  { id: "supplements", label: "Taking Supplements" },
+  { id: "tracking-sleep", label: "Tracking Sleep" },
+  { id: "tracking-glucose", label: "Monitoring Blood Glucose" },
+  { id: "regular-exercise", label: "Regular Exercise" },
+  { id: "strict-diet", label: "Following Strict Diet" },
+  { id: "blood-tests", label: "Regular Blood Tests" }
 ] as const;
