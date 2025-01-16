@@ -1,8 +1,48 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { routines, users, metrics } from "@db/schema";
+import { routines, users, metrics, protocolSections } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { scrapeProtocolSections, findRelevantSections } from "./utils/protocol-scraper";
+
+let cachedProtocolSections: any[] = [];
+
+async function initializeProtocolSections() {
+  try {
+    // Check if we already have sections in the database
+    const existingSections = await db.query.protocolSections.findMany();
+
+    if (existingSections.length === 0) {
+      // Scrape and store sections if none exist
+      const sections = await scrapeProtocolSections();
+
+      for (const section of sections) {
+        await db.insert(protocolSections).values({
+          sectionId: section.id,
+          title: section.title,
+          content: section.content,
+          categories: section.categories,
+          url: section.url,
+        });
+      }
+
+      cachedProtocolSections = sections;
+    } else {
+      cachedProtocolSections = existingSections.map(section => ({
+        id: section.sectionId,
+        title: section.title,
+        content: section.content,
+        categories: section.categories,
+        url: section.url,
+      }));
+    }
+  } catch (error) {
+    console.error('Error initializing protocol sections:', error);
+  }
+}
+
+// Initialize protocol sections when server starts
+initializeProtocolSections();
 
 export function registerRoutes(app: Express): Server {
   app.post("/api/routines", async (req, res) => {
@@ -23,11 +63,18 @@ export function registerRoutes(app: Express): Server {
 
       console.log('User created:', user);
 
+      // Find relevant protocol sections based on user preferences
+      const relevantSections = findRelevantSections({
+        improvementAreas: userData.improvementAreas,
+        currentHealth: userData.currentHealth,
+        equipment: userData.equipment,
+      });
+
       // Generate personalized routine based on user data
-      const routine = generateRoutine(userData);
+      const routine = generateRoutine(userData, relevantSections);
       console.log('Generated routine:', routine);
 
-      // Save routine with protocol links
+      // Save routine with protocol links and embedded sections
       const [savedRoutine] = await db.insert(routines).values({
         userId: user.id,
         supplements: routine.supplements,
@@ -36,6 +83,7 @@ export function registerRoutes(app: Express): Server {
         sleepSchedule: routine.sleepSchedule,
         metrics: routine.metrics,
         protocolLinks: routine.protocolLinks,
+        embeddedSections: routine.embeddedSections,
       }).returning();
 
       console.log('Saved routine:', savedRoutine);
@@ -72,14 +120,34 @@ export function registerRoutes(app: Express): Server {
   return httpServer;
 }
 
-function generateRoutine(userData: any) {
+function generateRoutine(userData: any, relevantSections: Map<string, string>) {
   const protocolLinks = {
-    supplements: "https://protocol.bryanjohnson.com/#supplements",
-    exercise: "https://protocol.bryanjohnson.com/#exercise",
-    diet: "https://protocol.bryanjohnson.com/#perfect-diet",
-    sleep: "https://protocol.bryanjohnson.com/#sleep",
-    testing: "https://protocol.bryanjohnson.com/#measurements",
+    supplements: relevantSections.get('supplements') || "https://protocol.bryanjohnson.com/#supplements",
+    exercise: relevantSections.get('exercise') || "https://protocol.bryanjohnson.com/#exercise",
+    diet: relevantSections.get('diet') || "https://protocol.bryanjohnson.com/#perfect-diet",
+    sleep: relevantSections.get('sleep') || "https://protocol.bryanjohnson.com/#sleep",
+    testing: relevantSections.get('testing') || "https://protocol.bryanjohnson.com/#measurements",
   };
+
+  // Find relevant embedded sections from cached protocol data
+  const embeddedSections = cachedProtocolSections
+    .filter(section => {
+      const userCategories = [
+        ...userData.improvementAreas,
+        ...userData.currentHealth,
+        ...userData.equipment,
+      ];
+      return userCategories.some(category => 
+        section.categories.some((sectionCat: string) => 
+          sectionCat.toLowerCase().includes(category.toLowerCase())
+        )
+      );
+    })
+    .map(section => ({
+      title: section.title,
+      content: section.content,
+      url: section.url,
+    }));
 
   return {
     supplements: [
@@ -128,6 +196,7 @@ function generateRoutine(userData: any) {
       trackSupplements: true,
       reference: protocolLinks.testing
     },
-    protocolLinks
+    protocolLinks,
+    embeddedSections,
   };
 }

@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import type { EmbeddedSection } from "@/lib/types";
 
 interface ProtocolCardProps {
   title: string;
-  data: any;
+  data: any; // This remains any since it can be different types based on the protocol section
+  embeddedSection?: EmbeddedSection;
 }
 
-export default function ProtocolCard({ title, data }: ProtocolCardProps) {
+export default function ProtocolCard({ title, data, embeddedSection }: ProtocolCardProps) {
   const renderContent = () => {
     if (Array.isArray(data)) {
       return (
@@ -22,6 +24,21 @@ export default function ProtocolCard({ title, data }: ProtocolCardProps) {
               </li>
             ))}
           </ul>
+          {embeddedSection && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+              <h4 className="font-semibold mb-2">{embeddedSection.title}</h4>
+              <p className="text-sm text-gray-600 mb-3">{embeddedSection.content}</p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="w-full flex items-center justify-center gap-2 text-blue-600"
+                onClick={() => window.open(embeddedSection.url, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+                View Full Details
+              </Button>
+            </div>
+          )}
           {data[0]?.reference && (
             <Button 
               variant="outline" 
@@ -50,6 +67,21 @@ export default function ProtocolCard({ title, data }: ProtocolCardProps) {
             );
           })}
         </div>
+        {embeddedSection && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+            <h4 className="font-semibold mb-2">{embeddedSection.title}</h4>
+            <p className="text-sm text-gray-600 mb-3">{embeddedSection.content}</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full flex items-center justify-center gap-2 text-blue-600"
+              onClick={() => window.open(embeddedSection.url, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4" />
+              View Full Details
+            </Button>
+          </div>
+        )}
         {data.reference && (
           <Button 
             variant="outline" 

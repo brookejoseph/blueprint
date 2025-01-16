@@ -15,6 +15,16 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const protocolSections = pgTable("protocol_sections", {
+  id: serial("id").primaryKey(),
+  sectionId: text("section_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  categories: json("categories").notNull(),
+  url: text("url").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const routines = pgTable("routines", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -24,6 +34,7 @@ export const routines = pgTable("routines", {
   sleepSchedule: json("sleep_schedule").notNull(),
   metrics: json("metrics").notNull(),
   protocolLinks: json("protocol_links").notNull(),
+  embeddedSections: json("embedded_sections").default('[]').notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -39,5 +50,6 @@ export const metrics = pgTable("metrics", {
 });
 
 export type User = typeof users.$inferSelect;
+export type ProtocolSection = typeof protocolSections.$inferSelect;
 export type Routine = typeof routines.$inferSelect;
 export type Metric = typeof metrics.$inferSelect;
