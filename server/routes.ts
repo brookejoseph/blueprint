@@ -5,6 +5,8 @@ import { routines, users, metrics, protocolSections } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { scrapeProtocolSections, findRelevantSections } from "./utils/protocol-scraper";
 
+const PROTOCOL_URL = "https://protocol.bryanjohnson.com"; // Add PROTOCOL_URL constant
+
 let cachedProtocolSections: any[] = [];
 
 async function initializeProtocolSections() {
@@ -121,15 +123,7 @@ export function registerRoutes(app: Express): Server {
 }
 
 function generateRoutine(userData: any, relevantSections: Map<string, string>) {
-  const protocolLinks = {
-    supplements: relevantSections.get('supplements') || "https://protocol.bryanjohnson.com/#supplements",
-    exercise: relevantSections.get('exercise') || "https://protocol.bryanjohnson.com/#exercise",
-    diet: relevantSections.get('diet') || "https://protocol.bryanjohnson.com/#perfect-diet",
-    sleep: relevantSections.get('sleep') || "https://protocol.bryanjohnson.com/#sleep",
-    testing: relevantSections.get('testing') || "https://protocol.bryanjohnson.com/#measurements",
-  };
-
-  // Find relevant embedded sections from cached protocol data
+  // Find most relevant embedded sections from cached protocol data
   const embeddedSections = cachedProtocolSections
     .filter(section => {
       const userCategories = [
@@ -137,17 +131,40 @@ function generateRoutine(userData: any, relevantSections: Map<string, string>) {
         ...userData.currentHealth,
         ...userData.equipment,
       ];
+
+      // More sophisticated matching using categories and content relevance
       return userCategories.some(category => 
         section.categories.some((sectionCat: string) => 
           sectionCat.toLowerCase().includes(category.toLowerCase())
-        )
+        ) ||
+        section.content.toLowerCase().includes(category.toLowerCase())
       );
     })
+    .sort((a, b) => {
+      // Sort by category match count for better relevance
+      const getCategoryMatchCount = (section: any) => {
+        return section.categories.filter((cat: string) => 
+          userData.improvementAreas.includes(cat) ||
+          userData.currentHealth.includes(cat) ||
+          userData.equipment.includes(cat)
+        ).length;
+      };
+      return getCategoryMatchCount(b) - getCategoryMatchCount(a);
+    })
+    .slice(0, 5) // Take top 5 most relevant sections
     .map(section => ({
       title: section.title,
       content: section.content,
       url: section.url,
     }));
+
+  const protocolLinks = {
+    supplements: relevantSections.get('supplements') || `${PROTOCOL_URL}#supplements`,
+    exercise: relevantSections.get('exercise') || `${PROTOCOL_URL}#exercise`,
+    diet: relevantSections.get('diet') || `${PROTOCOL_URL}#perfect-diet`,
+    sleep: relevantSections.get('sleep') || `${PROTOCOL_URL}#sleep`,
+    testing: relevantSections.get('testing') || `${PROTOCOL_URL}#measurements`,
+  };
 
   return {
     supplements: [

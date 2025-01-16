@@ -18,14 +18,19 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
     const $ = cheerio.load(html);
     const sections: ProtocolSection[] = [];
 
-    // Scrape main protocol sections
+    // Scrape main protocol sections with more detailed content
     $('.section-container').each((_, element) => {
       const $section = $(element);
       const id = $section.attr('id') || '';
       const title = $section.find('h2, h3').first().text().trim();
-      const content = $section.find('p').first().text().trim();
 
-      if (id && title) {
+      // Extract full content including nested elements
+      const content = $section.find('p, li').map((_, el) => $(el).text().trim())
+        .get()
+        .filter(text => text.length > 0)
+        .join('\n');
+
+      if (id && title && content) {
         sections.push({
           id,
           title,
@@ -36,7 +41,8 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
       }
     });
 
-    return sections;
+    // Sort sections by relevance and content length
+    return sections.sort((a, b) => b.content.length - a.content.length);
   } catch (error) {
     console.error('Error scraping protocol:', error);
     throw new Error('Failed to scrape protocol sections');
@@ -47,20 +53,50 @@ function categorizeSectionContent(content: string, title: string): string[] {
   const categories = new Set<string>();
   const text = `${title} ${content}`.toLowerCase();
 
-  // Map content to categories based on keywords
+  // Enhanced category keywords with more specific terms
   const categoryKeywords = {
-    supplements: ['supplement', 'vitamin', 'mineral', 'omega', 'nutrient'],
-    exercise: ['exercise', 'workout', 'fitness', 'training', 'cardio', 'strength'],
-    diet: ['diet', 'nutrition', 'food', 'meal', 'eating'],
-    sleep: ['sleep', 'circadian', 'rest', 'bed'],
-    testing: ['test', 'measure', 'track', 'monitor', 'biomarker'],
-    longevity: ['longevity', 'lifespan', 'aging', 'age'],
-    brain: ['brain', 'cognitive', 'mental', 'focus', 'memory'],
-    hormones: ['hormone', 'testosterone', 'thyroid', 'insulin']
+    supplements: [
+      'supplement', 'vitamin', 'mineral', 'omega', 'nutrient',
+      'capsule', 'dose', 'intake', 'bioavailable'
+    ],
+    exercise: [
+      'exercise', 'workout', 'fitness', 'training', 'cardio', 'strength',
+      'resistance', 'mobility', 'flexibility', 'endurance'
+    ],
+    diet: [
+      'diet', 'nutrition', 'food', 'meal', 'eating',
+      'macronutrient', 'protein', 'carbohydrate', 'fat', 'calorie'
+    ],
+    sleep: [
+      'sleep', 'circadian', 'rest', 'bed', 'melatonin',
+      'rem', 'deep sleep', 'sleep latency', 'sleep quality'
+    ],
+    testing: [
+      'test', 'measure', 'track', 'monitor', 'biomarker',
+      'blood test', 'panel', 'metric', 'data', 'analysis'
+    ],
+    longevity: [
+      'longevity', 'lifespan', 'aging', 'age', 'senescence',
+      'cellular health', 'mitochondria', 'telomere'
+    ],
+    brain: [
+      'brain', 'cognitive', 'mental', 'focus', 'memory',
+      'neuroplasticity', 'concentration', 'clarity'
+    ],
+    hormones: [
+      'hormone', 'testosterone', 'thyroid', 'insulin',
+      'cortisol', 'growth hormone', 'endocrine'
+    ]
   };
 
+  // Score-based categorization
   Object.entries(categoryKeywords).forEach(([category, keywords]) => {
-    if (keywords.some(keyword => text.includes(keyword))) {
+    const matchCount = keywords.reduce((count, keyword) => {
+      const matches = (text.match(new RegExp(keyword, 'gi')) || []).length;
+      return count + matches;
+    }, 0);
+
+    if (matchCount >= 2) { // Require at least 2 keyword matches for more accurate categorization
       categories.add(category);
     }
   });
@@ -77,38 +113,38 @@ export function findRelevantSections(
 ): Map<string, string> {
   const matches = new Map<string, string>();
 
-  // Map user preferences to relevant protocol sections
+  // Enhanced category mappings with more specific sections
   const categoryMapping = {
-    'biological-age': ['testing', 'supplements'],
-    'brain': ['brain', 'supplements'],
-    'sleep': ['sleep'],
-    'fitness': ['exercise'],
-    'longevity': ['longevity', 'supplements', 'diet'],
-    'hormones': ['hormones', 'testing']
+    'biological-age': ['testing', 'supplements', 'longevity'],
+    'brain': ['brain', 'supplements', 'sleep'],
+    'sleep': ['sleep', 'supplements', 'testing'],
+    'fitness': ['exercise', 'supplements', 'testing'],
+    'longevity': ['longevity', 'supplements', 'diet', 'testing'],
+    'hormones': ['hormones', 'testing', 'supplements']
   };
 
   const equipmentMapping = {
-    'red-light': ['light-therapy'],
-    'cgm': ['glucose', 'testing'],
-    'oura': ['sleep', 'tracking'],
-    'hyperbaric': ['oxygen-therapy'],
-    'infrared-sauna': ['sauna', 'heat-therapy'],
-    'cold-plunge': ['cold-therapy'],
-    'peptide-injections': ['peptides'],
-    'blood-testing': ['testing', 'biomarkers'],
-    'dexa': ['body-composition', 'testing']
+    'red-light': ['light-therapy', 'longevity'],
+    'cgm': ['glucose', 'testing', 'diet'],
+    'oura': ['sleep', 'tracking', 'testing'],
+    'hyperbaric': ['oxygen-therapy', 'brain'],
+    'infrared-sauna': ['sauna', 'heat-therapy', 'recovery'],
+    'cold-plunge': ['cold-therapy', 'recovery'],
+    'peptide-injections': ['peptides', 'hormones'],
+    'blood-testing': ['testing', 'biomarkers', 'hormones'],
+    'dexa': ['body-composition', 'testing', 'fitness']
   };
 
   const currentHealthMapping = {
-    'supplements': ['supplements'],
-    'tracking-sleep': ['sleep'],
-    'tracking-glucose': ['glucose', 'testing'],
-    'regular-exercise': ['exercise'],
-    'strict-diet': ['diet'],
-    'blood-tests': ['testing']
+    'supplements': ['supplements', 'testing'],
+    'tracking-sleep': ['sleep', 'testing'],
+    'tracking-glucose': ['glucose', 'diet', 'testing'],
+    'regular-exercise': ['exercise', 'fitness'],
+    'strict-diet': ['diet', 'testing'],
+    'blood-tests': ['testing', 'biomarkers']
   };
 
-  // Process improvement areas
+  // Process improvement areas with priority
   userPreferences.improvementAreas.forEach(area => {
     const categories = categoryMapping[area as keyof typeof categoryMapping] || [];
     categories.forEach(category => {
