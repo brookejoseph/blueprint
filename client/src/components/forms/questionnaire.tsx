@@ -3,18 +3,23 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import { IMPROVEMENT_AREAS, BUDGET_RANGES, AVAILABLE_EQUIPMENT } from "@/lib/types";
 import type { UserFormData } from "@/lib/types";
+import { Brain, Moon, Sparkles, Dumbbell, Infinity, Apple } from "lucide-react";
 
-const ACTIVITY_LEVELS = [
-  { value: "sedentary", label: "Mostly Sedentary" },
-  { value: "light", label: "Light Activity" },
-  { value: "moderate", label: "Moderately Active" },
-  { value: "very", label: "Very Active" },
-];
+const ICONS = {
+  brain: Brain,
+  moon: Moon,
+  sparkles: Sparkles,
+  dumbbell: Dumbbell,
+  infinity: Infinity,
+  apple: Apple,
+};
 
 export default function Questionnaire() {
   const [step, setStep] = useState(1);
@@ -25,8 +30,9 @@ export default function Questionnaire() {
       name: "",
       age: 0,
       gender: "",
-      activityLevel: "",
-      healthGoals: [],
+      improvementAreas: [],
+      budget: "",
+      equipment: [],
     },
   });
 
@@ -145,6 +151,150 @@ export default function Questionnaire() {
                 Back
               </Button>
               <Button
+                type="button"
+                onClick={nextStep}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="improvementAreas"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>What areas would you like to improve?</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-2 gap-4">
+                      {IMPROVEMENT_AREAS.map((area) => {
+                        const Icon = ICONS[area.icon as keyof typeof ICONS];
+                        return (
+                          <Card
+                            key={area.id}
+                            className={`cursor-pointer transition-all ${
+                              field.value.includes(area.id)
+                                ? "border-blue-500 bg-blue-50"
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const newValue = field.value.includes(area.id)
+                                ? field.value.filter((v) => v !== area.id)
+                                : [...field.value, area.id];
+                              field.onChange(newValue);
+                            }}
+                          >
+                            <CardContent className="flex items-center gap-3 p-4">
+                              <Icon className="h-5 w-5 text-blue-600" />
+                              <span>{area.label}</span>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={prevStep}>
+                Back
+              </Button>
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="budget"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>What's your monthly budget for health optimization?</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your budget range" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {BUDGET_RANGES.map((range) => (
+                        <SelectItem key={range.value} value={range.value}>
+                          {range.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={prevStep}>
+                Back
+              </Button>
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 6 && (
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="equipment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>What equipment do you have access to?</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-2 gap-4">
+                      {AVAILABLE_EQUIPMENT.map((item) => (
+                        <Card
+                          key={item.id}
+                          className={`cursor-pointer transition-all ${
+                            field.value.includes(item.id)
+                              ? "border-blue-500 bg-blue-50"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            const newValue = field.value.includes(item.id)
+                              ? field.value.filter((v) => v !== item.id)
+                              : [...field.value, item.id];
+                            field.onChange(newValue);
+                          }}
+                        >
+                          <CardContent className="flex items-center gap-3 p-4">
+                            <span>{item.label}</span>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={prevStep}>
+                Back
+              </Button>
+              <Button
                 type="submit"
                 className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white"
               >
@@ -155,7 +305,7 @@ export default function Questionnaire() {
         )}
 
         <div className="mt-4 flex justify-center gap-2">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className={`h-2 w-2 rounded-full ${
