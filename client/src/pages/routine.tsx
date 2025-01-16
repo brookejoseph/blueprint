@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProtocolCard from "@/components/protocol/protocol-card";
 import MetricsDisplay from "@/components/metrics/metrics-display";
-import type { RoutineData, EmbeddedSection } from "@/lib/types";
+import type { RoutineData } from "@/lib/types";
 
 export default function Routine() {
   const { id } = useParams();
-
+  
   const { data: routine, isLoading } = useQuery<RoutineData>({
     queryKey: [`/api/routines/${id}`],
   });
@@ -20,14 +20,6 @@ export default function Routine() {
   if (!routine) {
     return <div className="container mx-auto p-8">Routine not found</div>;
   }
-
-  // Find relevant embedded sections for each protocol component
-  const findEmbeddedSection = (category: string): EmbeddedSection | undefined => {
-    return routine.embeddedSections?.find((section: EmbeddedSection) => 
-      section.title.toLowerCase().includes(category.toLowerCase()) ||
-      section.content.toLowerCase().includes(category.toLowerCase())
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -44,22 +36,18 @@ export default function Routine() {
             <ProtocolCard 
               title="Supplements"
               data={routine.supplements}
-              embeddedSection={findEmbeddedSection('supplements')}
             />
             <ProtocolCard 
               title="Diet"
               data={routine.diet}
-              embeddedSection={findEmbeddedSection('diet')}
             />
             <ProtocolCard 
               title="Exercise"
               data={routine.exercise}
-              embeddedSection={findEmbeddedSection('exercise')}
             />
             <ProtocolCard 
               title="Sleep Schedule"
               data={routine.sleepSchedule}
-              embeddedSection={findEmbeddedSection('sleep')}
             />
           </TabsContent>
 

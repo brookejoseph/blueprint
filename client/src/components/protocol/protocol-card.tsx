@@ -1,19 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
-import type { EmbeddedSection } from "@/lib/types";
 
 interface ProtocolCardProps {
   title: string;
-  data: any; // This remains any since it can be different types based on the protocol section
-  embeddedSection?: EmbeddedSection;
+  data: any;
 }
 
-export default function ProtocolCard({ title, data, embeddedSection }: ProtocolCardProps) {
-  const handleProtocolLink = (url: string) => {
-    window.open(url, '_blank')?.focus();
-  };
-
+export default function ProtocolCard({ title, data }: ProtocolCardProps) {
   const renderContent = () => {
     if (Array.isArray(data)) {
       return (
@@ -28,27 +22,12 @@ export default function ProtocolCard({ title, data, embeddedSection }: ProtocolC
               </li>
             ))}
           </ul>
-          {embeddedSection && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-              <h4 className="font-semibold mb-2">{embeddedSection.title}</h4>
-              <p className="text-sm text-gray-600 mb-3">{embeddedSection.content}</p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full flex items-center justify-center gap-2 text-blue-600"
-                onClick={() => handleProtocolLink(embeddedSection.url)}
-              >
-                <ExternalLink className="h-4 w-4" />
-                View Full Details
-              </Button>
-            </div>
-          )}
           {data[0]?.reference && (
             <Button 
               variant="outline" 
               size="sm"
               className="w-full flex items-center justify-center gap-2 text-blue-600"
-              onClick={() => handleProtocolLink(data[0].reference)}
+              onClick={() => window.open(data[0].reference, '_blank')}
             >
               <ExternalLink className="h-4 w-4" />
               View Full Protocol Details
@@ -71,27 +50,12 @@ export default function ProtocolCard({ title, data, embeddedSection }: ProtocolC
             );
           })}
         </div>
-        {embeddedSection && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-            <h4 className="font-semibold mb-2">{embeddedSection.title}</h4>
-            <p className="text-sm text-gray-600 mb-3">{embeddedSection.content}</p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="w-full flex items-center justify-center gap-2 text-blue-600"
-              onClick={() => handleProtocolLink(embeddedSection.url)}
-            >
-              <ExternalLink className="h-4 w-4" />
-              View Full Details
-            </Button>
-          </div>
-        )}
         {data.reference && (
           <Button 
             variant="outline" 
             size="sm"
             className="w-full flex items-center justify-center gap-2 text-blue-600"
-            onClick={() => handleProtocolLink(data.reference)}
+            onClick={() => window.open(data.reference, '_blank')}
           >
             <ExternalLink className="h-4 w-4" />
             View Full Protocol Details

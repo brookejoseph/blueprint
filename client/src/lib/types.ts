@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 export interface UserFormData {
   name: string;
   age: number;
@@ -12,26 +10,12 @@ export interface UserFormData {
   currentHealth: string[];
 }
 
-export interface EmbeddedSection {
-  title: string;
-  content: string;
-  url: string;
-}
-
 export interface RoutineData {
   supplements: SupplementPlan[];
   diet: DietPlan;
   exercise: ExercisePlan;
   sleepSchedule: SleepSchedule;
   metrics: MetricsConfig;
-  protocolLinks: {
-    supplements: string;
-    exercise: string;
-    diet: string;
-    sleep: string;
-    testing: string;
-  };
-  embeddedSections: EmbeddedSection[];
 }
 
 export interface SupplementPlan {
@@ -39,7 +23,6 @@ export interface SupplementPlan {
   dosage: string;
   timing: string;
   cost: number;
-  reference?: string;
 }
 
 export interface DietPlan {
@@ -50,7 +33,6 @@ export interface DietPlan {
     daily: number;
     monthly: number;
   };
-  reference?: string;
 }
 
 export interface ExercisePlan {
@@ -58,7 +40,6 @@ export interface ExercisePlan {
   frequency: string;
   duration: string;
   requiredEquipment: string[];
-  reference?: string;
 }
 
 export interface SleepSchedule {
@@ -66,7 +47,6 @@ export interface SleepSchedule {
   wakeTime: string;
   sleepGoal: number;
   requiredItems: string[];
-  reference?: string;
 }
 
 export interface MetricsConfig {
@@ -74,7 +54,6 @@ export interface MetricsConfig {
   trackSleep: boolean;
   trackSteps: boolean;
   trackSupplements: boolean;
-  reference?: string;
 }
 
 export const IMPROVEMENT_AREAS = [
