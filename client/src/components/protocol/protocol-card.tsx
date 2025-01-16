@@ -10,6 +10,18 @@ interface ProtocolCardProps {
 }
 
 export default function ProtocolCard({ title, data, embeddedSection }: ProtocolCardProps) {
+  const handleProtocolLink = (url: string) => {
+    // Open in new tab and ensure text fragment highlighting works
+    const win = window.open(url, '_blank');
+    if (win) {
+      win.focus();
+      // Add a small delay to ensure the browser has time to process the text fragment
+      setTimeout(() => {
+        win.scrollTo(0, win.scrollY - 100); // Scroll up slightly to show context
+      }, 1000);
+    }
+  };
+
   const renderContent = () => {
     if (Array.isArray(data)) {
       return (
@@ -32,7 +44,7 @@ export default function ProtocolCard({ title, data, embeddedSection }: ProtocolC
                 variant="outline" 
                 size="sm"
                 className="w-full flex items-center justify-center gap-2 text-blue-600"
-                onClick={() => window.open(embeddedSection.url, '_blank')}
+                onClick={() => handleProtocolLink(embeddedSection.url)}
               >
                 <ExternalLink className="h-4 w-4" />
                 View Full Details
@@ -44,7 +56,7 @@ export default function ProtocolCard({ title, data, embeddedSection }: ProtocolC
               variant="outline" 
               size="sm"
               className="w-full flex items-center justify-center gap-2 text-blue-600"
-              onClick={() => window.open(data[0].reference, '_blank')}
+              onClick={() => handleProtocolLink(data[0].reference)}
             >
               <ExternalLink className="h-4 w-4" />
               View Full Protocol Details
@@ -75,7 +87,7 @@ export default function ProtocolCard({ title, data, embeddedSection }: ProtocolC
               variant="outline" 
               size="sm"
               className="w-full flex items-center justify-center gap-2 text-blue-600"
-              onClick={() => window.open(embeddedSection.url, '_blank')}
+              onClick={() => handleProtocolLink(embeddedSection.url)}
             >
               <ExternalLink className="h-4 w-4" />
               View Full Details
@@ -87,7 +99,7 @@ export default function ProtocolCard({ title, data, embeddedSection }: ProtocolC
             variant="outline" 
             size="sm"
             className="w-full flex items-center justify-center gap-2 text-blue-600"
-            onClick={() => window.open(data.reference, '_blank')}
+            onClick={() => handleProtocolLink(data.reference)}
           >
             <ExternalLink className="h-4 w-4" />
             View Full Protocol Details

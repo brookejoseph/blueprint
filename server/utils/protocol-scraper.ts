@@ -7,6 +7,7 @@ interface ProtocolSection {
   content: string;
   categories: string[];
   url: string;
+  textFragment?: string; // Add text fragment for highlighting
 }
 
 const PROTOCOL_URL = "https://protocol.bryanjohnson.com";
@@ -24,19 +25,31 @@ export async function scrapeProtocolSections(): Promise<ProtocolSection[]> {
       const id = $section.attr('id') || '';
       const title = $section.find('h2, h3').first().text().trim();
 
-      // Extract full content including nested elements
-      const content = $section.find('p, li').map((_, el) => $(el).text().trim())
+      // Extract full content including nested elements and find key sentences
+      const paragraphs = $section.find('p, li').map((_, el) => $(el).text().trim())
         .get()
-        .filter(text => text.length > 0)
-        .join('\n');
+        .filter(text => text.length > 0);
+
+      const content = paragraphs.join('\n');
+
+      // Find the most important paragraph (usually the first non-empty one after title)
+      const keyParagraph = paragraphs.find(p => 
+        p.length > 50 && !p.toLowerCase().includes('disclaimer') && 
+        !p.toLowerCase().includes('note:')
+      ) || paragraphs[0];
 
       if (id && title && content) {
+        // Create text fragment identifier for highlighting
+        const textFragment = keyParagraph ? 
+          `#:~:text=${encodeURIComponent(keyParagraph.slice(0, 150))}` : '';
+
         sections.push({
           id,
           title,
           content,
           categories: categorizeSectionContent(content, title),
-          url: `${PROTOCOL_URL}#${id}`
+          url: `${PROTOCOL_URL}#${id}${textFragment}`,
+          textFragment
         });
       }
     });
