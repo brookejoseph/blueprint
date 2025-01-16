@@ -1,37 +1,39 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { db } from "@db";
-import { routines, users, metrics, protocolSections } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { supabase } from "../db/supabase";
 import { scrapeProtocolSections, findRelevantSections } from "./utils/protocol-scraper";
 
-const PROTOCOL_URL = "https://protocol.bryanjohnson.com"; // Add PROTOCOL_URL constant
+const PROTOCOL_URL = "https://protocol.bryanjohnson.com";
 
 let cachedProtocolSections: any[] = [];
 
 async function initializeProtocolSections() {
   try {
     // Check if we already have sections in the database
-    const existingSections = await db.query.protocolSections.findMany();
+    const { data: existingSections, error } = await supabase
+      .from('protocol_sections')
+      .select('*');
 
-    if (existingSections.length === 0) {
+    if (!existingSections || existingSections.length === 0) {
       // Scrape and store sections if none exist
       const sections = await scrapeProtocolSections();
 
       for (const section of sections) {
-        await db.insert(protocolSections).values({
-          sectionId: section.id,
-          title: section.title,
-          content: section.content,
-          categories: section.categories,
-          url: section.url,
-        });
+        await supabase
+          .from('protocol_sections')
+          .insert({
+            section_id: section.id,
+            title: section.title,
+            content: section.content,
+            categories: section.categories,
+            url: section.url,
+          });
       }
 
       cachedProtocolSections = sections;
     } else {
       cachedProtocolSections = existingSections.map(section => ({
-        id: section.sectionId,
+        id: section.section_id,
         title: section.title,
         content: section.content,
         categories: section.categories,
@@ -53,16 +55,21 @@ export function registerRoutes(app: Express): Server {
       console.log('Creating user with data:', userData);
 
       // Create user with all questionnaire data
-      const [user] = await db.insert(users).values({
-        name: userData.name,
-        age: userData.age,
-        gender: userData.gender,
-        improvementAreas: userData.improvementAreas,
-        budget: userData.budget,
-        equipment: userData.equipment,
-        currentHealth: userData.currentHealth,
-      }).returning();
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .insert({
+          name: userData.name,
+          age: userData.age,
+          gender: userData.gender,
+          improvement_areas: userData.improvementAreas,
+          budget: userData.budget,
+          equipment: userData.equipment,
+          current_health: userData.currentHealth,
+        })
+        .select()
+        .single();
 
+      if (userError) throw userError;
       console.log('User created:', user);
 
       // Find relevant protocol sections based on user preferences
@@ -77,17 +84,22 @@ export function registerRoutes(app: Express): Server {
       console.log('Generated routine:', routine);
 
       // Save routine with protocol links and embedded sections
-      const [savedRoutine] = await db.insert(routines).values({
-        userId: user.id,
-        supplements: routine.supplements,
-        diet: routine.diet,
-        exercise: routine.exercise,
-        sleepSchedule: routine.sleepSchedule,
-        metrics: routine.metrics,
-        protocolLinks: routine.protocolLinks,
-        embeddedSections: routine.embeddedSections,
-      }).returning();
+      const { data: savedRoutine, error: routineError } = await supabase
+        .from('routines')
+        .insert({
+          user_id: user.id,
+          supplements: routine.supplements,
+          diet: routine.diet,
+          exercise: routine.exercise,
+          sleep_schedule: routine.sleepSchedule,
+          metrics: routine.metrics,
+          protocol_links: routine.protocolLinks,
+          embedded_sections: routine.embeddedSections,
+        })
+        .select()
+        .single();
 
+      if (routineError) throw routineError;
       console.log('Saved routine:', savedRoutine);
       res.json(savedRoutine);
     } catch (error) {
@@ -101,11 +113,13 @@ export function registerRoutes(app: Express): Server {
       const routineId = parseInt(req.params.id);
       console.log('Fetching routine with ID:', routineId);
 
-      const routine = await db.query.routines.findFirst({
-        where: eq(routines.id, routineId),
-      });
+      const { data: routine, error } = await supabase
+        .from('routines')
+        .select('*')
+        .eq('id', routineId)
+        .single();
 
-      if (!routine) {
+      if (error || !routine) {
         console.log('Routine not found for ID:', routineId);
         return res.status(404).json({ error: "Routine not found" });
       }
@@ -132,7 +146,7 @@ function generateRoutine(userData: any, relevantSections: Map<string, string>) {
         const categoryMatch = section.categories.includes(category);
 
         // Then check for specific term matches in the content
-        const contentMatch = specificTerms.some(term => 
+        const contentMatch = specificTerms.some(term =>
           section.content.toLowerCase().includes(term.toLowerCase())
         );
 
@@ -204,17 +218,17 @@ function generateRoutine(userData: any, relevantSections: Map<string, string>) {
   // Rest of the routine generation remains unchanged
   return {
     supplements: [
-      { 
-        name: "Vitamin D3", 
-        dosage: "2,000 IU", 
+      {
+        name: "Vitamin D3",
+        dosage: "2,000 IU",
         timing: "Morning",
-        reference: protocolLinks.supplements 
+        reference: protocolLinks.supplements
       },
-      { 
-        name: "Omega-3", 
-        dosage: "2g EPA, 1g DHA", 
+      {
+        name: "Omega-3",
+        dosage: "2g EPA, 1g DHA",
         timing: "With meals",
-        reference: protocolLinks.supplements 
+        reference: protocolLinks.supplements
       },
     ],
     diet: {
